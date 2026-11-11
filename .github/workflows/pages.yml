@@ -1,0 +1,36 @@
+name: Deploy encrypted playtest to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Stage only the encrypted page and licences
+        run: |
+          grep -q 'staticryptEncryptedMsgUniqueVariableName' index.html
+          grep -q 'noindex, nofollow, noarchive' index.html
+          mkdir site
+          cp index.html THIRD-PARTY-LICENSES.txt site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
